@@ -3,9 +3,28 @@ import { Badge, Card, List } from "antd";
 import React, { useState } from "react";
 import { Text } from "../text";
 import UpcomingEventsSkeleton from "../skeleton/upcoming-events";
+import { getDate } from "@/utilities/helpers";
+import { useList } from "@refinedev/core";
+import { DASHBORAD_CALENDAR_UPCOMING_EVENTS_QUERY } from "@/graphql/queries";
+import dayjs from "dayjs";
 
 const UpcomingEvents = () => {
-  const [isLoaded, setIsLoaded] = useState(true);
+  const { data, isLoading } = useList({
+    resource: "events",
+    pagination: { pageSize: 5 },
+    sorters: [{ field: "startDate", order: "asc" }],
+    filters: [
+      {
+        field: "startDate",
+        operator: "gte",
+        value: dayjs().format("YYYY-MM-DD"),
+      },
+    ],
+    meta: {
+      gqlQuery: DASHBORAD_CALENDAR_UPCOMING_EVENTS_QUERY,
+    },
+  });
+
   return (
     <Card
       style={{ height: "100%" }}
@@ -14,13 +33,13 @@ const UpcomingEvents = () => {
       title={
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <CalendarOutlined />
-          <Text size="sm" style={{ marginLeft: "0.7em" }}>
+          <Text size="sm" style={{ marginLeft: "0.7rem" }}>
             Upcoming Events
           </Text>
         </div>
       }
     >
-      {isLoaded ? (
+      {isLoading ? (
         <List
           itemLayout="horizontal"
           dataSource={Array.from({ length: 5 }).map((_, index) => ({
@@ -31,15 +50,37 @@ const UpcomingEvents = () => {
       ) : (
         <List
           itemLayout="horizontal"
-          dataSource={[]}
+          dataSource={data?.data || []}
           renderItem={(item) => {
+            const renderDate = getDate(item.startDate, item.endDate);
+
             return (
               <List.Item>
-                <List.Item.Meta avatar={<Badge color={item.color} />} />
+                <List.Item.Meta
+                  avatar={<Badge color={item.color} />}
+                  title={<Text size="xs">{renderDate}</Text>}
+                  description={
+                    <Text ellipsis={{ tooltip: true }} strong>
+                      {item.title}
+                    </Text>
+                  }
+                />
               </List.Item>
             );
           }}
-        ></List>
+        />
+      )}
+      {!isLoading && data?.data.length === 0 && (
+        <span
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "100%",
+          }}
+        >
+          No upcoming events
+        </span>
       )}
     </Card>
   );
