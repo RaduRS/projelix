@@ -6,7 +6,7 @@ import {
   FilterDropdown,
   List,
 } from "@refinedev/antd";
-import { getDefaultFilter, useGo } from "@refinedev/core";
+import { HttpError, getDefaultFilter, useGo } from "@refinedev/core";
 import { useTable } from "@refinedev/antd";
 import { Input, Space, Table } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
@@ -15,12 +15,18 @@ import { Text } from "@/components/text";
 import { Company } from "@/graphql/schema.types";
 import { currencyNumber } from "@/utilities";
 import { useEffect, useState } from "react";
+import { GetFieldsFromList } from "@refinedev/nestjs-query";
+import { CompaniesListQuery } from "@/graphql/types";
 
 export const CompanyList = ({ children }: React.PropsWithChildren) => {
   const go = useGo();
-  const { tableProps, filters } = useTable({
+  const { tableProps, filters } = useTable<
+    GetFieldsFromList<CompaniesListQuery>,
+    HttpError,
+    GetFieldsFromList<CompaniesListQuery>
+  >({
     resource: "companies",
-    onSearch: (values: any) => {
+    onSearch: (values) => {
       return [
         {
           field: "name",
